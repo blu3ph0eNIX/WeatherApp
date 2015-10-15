@@ -5,6 +5,8 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +37,17 @@ public class MainActivityFragment extends Fragment {
         };
         List<String> weekForecast = new ArrayList<>(Arrays.asList(data));
 
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        ArrayAdapter<String> AdapterForecast = new ArrayAdapter<String>(
+                getActivity(),
+                R.layout.list_view_item_forecast,
+                R.id.list_view_item_forecast_textView,
+                weekForecast);
+
+        View rootView           = inflater.inflate(R.layout.fragment_main, container, false);
+        ListView fragmentList   = (ListView) rootView.findViewById(R.id.listView_forecast);
+
+        fragmentList.setAdapter(AdapterForecast);
+
         return rootView;
     }
 }
