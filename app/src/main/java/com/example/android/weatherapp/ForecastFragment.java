@@ -162,6 +162,8 @@ public class ForecastFragment extends Fragment {
 
                     // TODO:
                     // Dialog requesting permission?
+                    this.executeAsyncTask = false;
+
                 }
                 return;
             }
@@ -175,9 +177,11 @@ public class ForecastFragment extends Fragment {
     /**
      * Validates if permission has been given.
      * If not shouldShowRequestPermissionRationale is colled.
-     * @param permissionCode
+     * @param permissionCode String containing a Manifest.permission
      */
     private void permissionRequest(String permissionCode){
+        if(permissionCode.isEmpty())
+            return;
 
         if( ContextCompat.checkSelfPermission(getActivity(),permissionCode)
                 != PackageManager.PERMISSION_GRANTED ){
@@ -207,6 +211,7 @@ public class ForecastFragment extends Fragment {
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
+        /** Current activity simple name, FetchWeatherTask, added as Log Tag. */
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
 
@@ -254,7 +259,7 @@ public class ForecastFragment extends Fragment {
 
                 URL url = new URL(builtUri.toString());
 
-                Log.v(LOG_TAG, "Built URI " + builtUri.toString());
+//                Log.v(LOG_TAG, "Built URI " + builtUri.toString());
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -301,7 +306,7 @@ public class ForecastFragment extends Fragment {
                 }
             }
 
-            Log.v(LOG_TAG, "Forecast JSON String" + forecastJsonStr);
+//            Log.v(LOG_TAG, "Forecast JSON String" + forecastJsonStr);
 
             try {
                 return getWeatherDataFromJson(forecastJsonStr,numDays);
@@ -311,6 +316,17 @@ public class ForecastFragment extends Fragment {
             }
 
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(String[] result) {
+            if (result != null) {
+                mForecastAdapter.clear();
+                for(String dayForecastStr : result) {
+                    mForecastAdapter.add(dayForecastStr);
+                }
+                // New data is back from the server.  Hooray!
+            }
         }
 
         /** The date/time conversion code is going to be moved outside the asynctask later,
@@ -405,9 +421,11 @@ public class ForecastFragment extends Fragment {
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
+            /*
             for (String s : resultStrs) {
                 Log.v(LOG_TAG, "Forecast entry: " + s);
             }
+            */
             return resultStrs;
 
         }
