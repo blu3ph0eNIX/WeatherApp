@@ -39,18 +39,29 @@ import java.util.List;
  * A placeholder fragment containing a simple view.
  */
 public class ForecastFragment extends Fragment {
+    /** Current activity simple name, ForecastFragment, added as Log Tag. */
+    protected final String LOG_TAG_FRAGMENT = ForecastFragment.class.getSimpleName();
+
+    /** User Android SDK Version */
+    protected int sdkVersionName;
+    /** Used @onRequestPermissionsResult to validate if INTERNET Permission has been given.  */
+    protected final int MY_PERMISSIONS_REQUEST_INTERNET = 1;
+    /** Defines if AsyncTask can be run. If true run. Else don't. */
+    protected Boolean executeAsyncTask;
+
 
     ArrayAdapter<String> mForecastAdapter;
-    protected int versionName;
-    protected final int MY_PERMISSIONS_REQUEST_INTERNET = 1;
-    protected Boolean executeAsyncTask;
+
 
     public ForecastFragment() {
         this.executeAsyncTask = false;
 
+        // Retrieves SDK version for future use
         try {
-            versionName = Build.VERSION.SDK_INT;
-        } catch (Exception e) {        }
+            sdkVersionName = Build.VERSION.SDK_INT;
+        } catch (Exception e) {
+            Log.e(LOG_TAG_FRAGMENT, e.getMessage(), e);
+        }
     }
 
     @Override
@@ -117,12 +128,16 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
 
-            permissionRequest(Manifest.permission.INTERNET); // ACCESS_FINE_LOCATION
-            if( this.executeAsyncTask ){
+            if( sdkVersionName >= Build.VERSION_CODES.M ) {
+                permissionRequest(Manifest.permission.INTERNET);
+            }else{
+                this.executeAsyncTask=true;
+            }
+
+            if (this.executeAsyncTask) {
                 FetchWeatherTask weatherTask = new FetchWeatherTask();
                 weatherTask.execute("2267057");
             }
-
 
             return true;
         }
@@ -140,6 +155,7 @@ public class ForecastFragment extends Fragment {
                     // Request the permissions you need
                     // permission was granted, yay!
                     this.executeAsyncTask = true;
+
                 } else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
@@ -156,6 +172,11 @@ public class ForecastFragment extends Fragment {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    /**
+     * Validates if permission has been given.
+     * If not shouldShowRequestPermissionRationale is colled.
+     * @param permissionCode
+     */
     private void permissionRequest(String permissionCode){
 
         if( ContextCompat.checkSelfPermission(getActivity(),permissionCode)
