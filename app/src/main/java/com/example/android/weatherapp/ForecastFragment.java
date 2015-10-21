@@ -17,8 +17,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,11 +52,14 @@ public class ForecastFragment extends Fragment {
     protected Boolean executeAsyncTask;
 
 
-    ArrayAdapter<String> mForecastAdapter;
+    private ArrayAdapter<String> mForecastAdapter;
+    private Toast mCurrentToast;
 
 
     public ForecastFragment() {
         this.executeAsyncTask = false;
+        this.mCurrentToast = null;
+
 
         // Retrieves SDK version for future use
         try {
@@ -105,11 +110,23 @@ public class ForecastFragment extends Fragment {
                 R.id.list_view_item_forecast_textView,  // The ID of the TextView to populate.
                 weekForecast);
 
-        View rootView           = inflater.inflate(R.layout.fragment_main, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         // Get a reference to the ListView, and attach this adapter to it.
-        ListView listView    = (ListView) rootView.findViewById(R.id.listView_forecast);
+        ListView listView = (ListView) rootView.findViewById(R.id.listView_forecast);
         listView.setAdapter(mForecastAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if (mCurrentToast != null) mCurrentToast.cancel();
+
+                mCurrentToast = Toast.makeText(
+                            getActivity(),
+                            mForecastAdapter.getItem(position),
+                            Toast.LENGTH_LONG);
+                mCurrentToast.show();
+            }
+        });
 
         return rootView;
     }
@@ -128,12 +145,7 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
 
-            if( sdkVersionName >= Build.VERSION_CODES.M ) {
-                permissionRequest(Manifest.permission.INTERNET);
-            }else{
-                this.executeAsyncTask=true;
-            }
-
+            permissionRequest(Manifest.permission.INTERNET);
             if (this.executeAsyncTask) {
                 FetchWeatherTask weatherTask = new FetchWeatherTask();
                 weatherTask.execute("2267057");
@@ -144,6 +156,9 @@ public class ForecastFragment extends Fragment {
 
         return super.onOptionsItemSelected(item);
     }
+
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -182,6 +197,10 @@ public class ForecastFragment extends Fragment {
     private void permissionRequest(String permissionCode){
         if(permissionCode.isEmpty())
             return;
+        if( sdkVersionName < Build.VERSION_CODES.M ) {
+            this.executeAsyncTask=true;
+            return;
+        }
 
         if( ContextCompat.checkSelfPermission(getActivity(),permissionCode)
                 != PackageManager.PERMISSION_GRANTED ){

@@ -4,7 +4,7 @@
         It's to keep this short, so your launcher icon isn't displayed with "The greatest Wea"
         or something similar.
     -->
-    <string name="app_name">Sunshine</string>
+    <string name="app_name">WeatherApp</string>
 
     <!--
         By convention, "action" denotes that this String will be used as the label for an Action,
@@ -16,4 +16,5 @@
     <string name="action_refresh" translatable="false">Refresh</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_help">Help</string>
+    <string name="title_activity_detail">DetailActivity</string>
 </resources>
