@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">WeatherApp</string>
     <string name="action_help">Ajuda</string>
-    <string name="action_refresh" translatable="false"></string>
+
     <string name="action_settings">Definições</string>
-    <string name="hello_world">Olá Mundo!</string>
+    <string name="hello_world">Olá mundo!</string>
     <string name="title_activity_detail">Detalhes</string>
 </resources>
