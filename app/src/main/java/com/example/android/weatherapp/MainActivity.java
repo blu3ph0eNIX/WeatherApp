@@ -1,9 +1,11 @@
 package com.example.android.weatherapp;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -12,6 +14,13 @@ public class MainActivity extends AppCompatActivity {
     // NOTE:
     // Weather API Key  - 33dbaa1dd69b0d6ea04cff16de3971f1
     // Also Works       - bd82977b86bf27fb59a04b61b657fb6f
+
+    /** Current activity simple name, MainActivity, added as Log Tag. */
+    protected final String LOG_TAG_ACTIVITY = MainActivity.class.getSimpleName();
+    
+    /** User Android SDK Version */
+    protected int sdkVersionName;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -19,6 +28,13 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // Retrieves SDK version for future use
+        try {
+            sdkVersionName = Build.VERSION.SDK_INT;
+        } catch (Exception e) {
+            Log.e(LOG_TAG_ACTIVITY, e.getMessage(), e);
+        }
+        
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -45,8 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Intent settingsIntent = new Intent(this, SettingsActivity.class);
-            startActivity(settingsIntent);
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
 

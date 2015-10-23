@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- List of Preferences for Location Setting -->
+    <string-array name="preference_location_entries">
+        <item>@string/preference_location_city_lisbon_label</item>
+        <item>@string/preference_location_city_monsanto_label</item>
+        <item>@string/preference_location_city_covilha_label</item>
+        <item>@string/preference_location_city_vila_franca_de_xira_label</item>
+        <item>@string/preference_location_city_sintra_label</item>
+        <item>@string/preference_location_city_odivelas_label</item>
+    </string-array>
+    <string-array name="preference_location_values">
+        <item>@string/preference_location_city_lisbon_value</item>
+        <item>@string/preference_location_city_monsanto_value</item>
+        <item>@string/preference_location_city_covilha_value</item>
+        <item>@string/preference_location_city_vila_franca_de_xira_value</item>
+        <item>@string/preference_location_city_sintra_value</item>
+        <item>@string/preference_location_city_odivelas_value</item>
+    </string-array>
+
+    <!-- List of Preferences for Temperature Unit Setting -->
+    <string-array name="preference_temperature_units_entries">
+        <item>@string/preference_temperature_units_label_metric</item>
+        <item>@string/preference_temperature_units_label_imperial</item>
+    </string-array>
+    <string-array name="preference_temperature_units_values">
+        <item>@string/preference_temperature_units_metric</item>
+        <item>@string/preference_temperature_units_imperial</item>
+    </string-array>
+
+
+</resources>

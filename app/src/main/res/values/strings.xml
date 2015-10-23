@@ -11,13 +11,50 @@
         typically from the action bar.  The ActionBar is limited real estate, so shorter is better.
     -->
     <string name="action_settings">Settings</string>
-
-    <!-- Menu label to fetch updated weather info from the server -->
     <string name="action_refresh" translatable="false">Refresh</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="action_location">Location</string>
     <string name="action_help">Help</string>
-    <string name="title_activity_detail">DetailActivity</string>
+    <string name="action_share">Share</string>
 
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_detail">Details</string>
     <string name="title_activity_settings">Settings</string>
+
+    <string name="preference_general_category">General Preferences</string>
+
+    <!-- Location Preferences -->
+    <string name="preference_location_key" translatable="false">location</string>
+    <string name="preference_location_label">Location</string>
+    <string name="preference_location_summary">%s</string>
+    <string name="preference_location_dialog_title">Locations</string>
+
+    <string name="preference_location_default" translatable="false">2267057</string>
+
+    <string name="preference_location_city_lisbon_label">Lisbon</string>
+    <string name="preference_location_city_monsanto_label">Monsanto</string>
+    <string name="preference_location_city_covilha_label">Covilhã</string>
+    <string name="preference_location_city_vila_franca_de_xira_label">Vila Franca de Xira</string>
+    <string name="preference_location_city_sintra_label">Sintra</string>
+    <string name="preference_location_city_odivelas_label">Odivelas</string>
+
+    <string name="preference_location_city_lisbon_value">2267057</string>
+    <string name="preference_location_city_monsanto_value">2266249</string>
+    <string name="preference_location_city_covilha_value">2740313</string>
+    <string name="preference_location_city_vila_franca_de_xira_value">2261639</string>
+    <string name="preference_location_city_sintra_value">2262912</string>
+    <string name="preference_location_city_odivelas_value">2265467</string>
+
+    <!-- Temperature Preferences -->
+    <string name="preference_temperature_units_key" translatable="false">temperatureUnits</string>
+    <string name="preference_temperature_units_label">Temperature Unit</string>
+    <string name="preference_temperature_units_label_metric">Metric</string>
+    <string name="preference_temperature_units_label_imperial">Imperial</string>
+    <string name="preference_temperature_units_summary">%s</string>
+    <string name="preference_temperature_units_dialog_title">Temperature Units</string>
+
+    <string name="preference_temperature_units_default">@string/preference_temperature_units_metric</string>
+    
+    <string name="preference_temperature_units_metric" translatable="false">metric</string>
+    <string name="preference_temperature_units_imperial" translatable="false">imperial</string>
+
+
 </resources>

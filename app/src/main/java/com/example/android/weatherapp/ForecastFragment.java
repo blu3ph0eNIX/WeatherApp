@@ -2,11 +2,13 @@ package com.example.android.weatherapp;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -35,8 +37,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -52,6 +52,10 @@ public class ForecastFragment extends Fragment {
     /** Defines if AsyncTask can be run. If true run. Else don't. */
     protected Boolean executeAsyncTask;
 
+    /** Used @onRequestPermissionsResult to validate if LOCATION Permission has been given.  */
+    protected final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
+    /** Defines if AsyncTask can be run. If true run. Else don't. */
+    protected Boolean executeLocationIntent;
 
     private ArrayAdapter<String> mForecastAdapter;
     private Toast mCurrentToast;
@@ -59,8 +63,8 @@ public class ForecastFragment extends Fragment {
 
     public ForecastFragment() {
         this.executeAsyncTask = false;
+        this.executeLocationIntent = false;
         this.mCurrentToast = null;
-
 
         // Retrieves SDK version for future use
         try {
@@ -68,6 +72,12 @@ public class ForecastFragment extends Fragment {
         } catch (Exception e) {
             Log.e(LOG_TAG_FRAGMENT, e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
     }
 
     @Override
@@ -82,34 +92,14 @@ public class ForecastFragment extends Fragment {
                              Bundle savedInstanceState) {
 
 
-        // Create some dummy data for the ListView.  Here's a sample weekly forecast
-        String[] data = {
-            "Mon 6/23 - Sunny - 31/17",
-            "Tue 6/24 - Foggy - 21/8",
-            "Wed 6/25 - Cloudy - 22/17",
-            "Thurs 6/26 - Rainy - 18/11",
-            "Fri 6/27 - Foggy - 21/10",
-            "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-            "Sun 6/29 - Sunny - 20/7",
-            "Mon 6/30 - Sunny - 31/17",
-            "Tue 7/01 - Foggy - 21/8",
-            "Wed 7/02 - Cloudy - 22/17",
-            "Thurs 7/03 - Rainy - 18/11",
-            "Fri 7/04 - Foggy - 21/10",
-            "Sat 7/05 - TRAPPED IN WEATHERSTATION - 23/18",
-            "Sun 7/06 - Sunny - 20/7"
-        };
-        List<String> weekForecast = new ArrayList<>(Arrays.asList(data));
-
-        // Now that we have some dummy forecast data, create an ArrayAdapter.
-        // The ArrayAdapter will take data from a source (like our dummy forecast) and
+        // The ArrayAdapter will take data from a source and
         // use it to populate the ListView it's attached to.
         mForecastAdapter =
             new ArrayAdapter<>(
                 getActivity(),                          // The current context (this activity)
                 R.layout.list_view_item_forecast,       // The name of the layout ID.
                 R.id.list_view_item_forecast_textView,  // The ID of the TextView to populate.
-                weekForecast);
+                new ArrayList<String>());
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
@@ -128,7 +118,7 @@ public class ForecastFragment extends Fragment {
                 String forecast = mForecastAdapter.getItem(position);
 
                 Intent intentDetailActivity = new Intent(getActivity(), DetailActivity.class)
-                        .putExtra(Intent.EXTRA_TEXT,forecast);
+                        .putExtra(Intent.EXTRA_TEXT, forecast);
 
                 startActivity(intentDetailActivity);
             }
@@ -150,21 +140,24 @@ public class ForecastFragment extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-
-            permissionRequest(Manifest.permission.INTERNET);
-            if (this.executeAsyncTask) {
-                FetchWeatherTask weatherTask = new FetchWeatherTask();
-                weatherTask.execute("2267057");
-            }
-
+            updateWeather();
             return true;
-        }
 
+        }else if(id == R.id.action_location){
+            // TODO
+            // Refine Permission Request
+            permissionRequest(Manifest.permission.ACCESS_FINE_LOCATION);
+            if (true) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse("geo:38.716671,-9.13333?z=11")); // Lisbon - geo:lat,lon?zoom
+
+                if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+                    startActivity(intent);
+                }
+            }
+        }
         return super.onOptionsItemSelected(item);
     }
-
-
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -176,7 +169,6 @@ public class ForecastFragment extends Fragment {
                     // Request the permissions you need
                     // permission was granted, yay!
                     this.executeAsyncTask = true;
-
                 } else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
@@ -184,7 +176,6 @@ public class ForecastFragment extends Fragment {
                     // TODO:
                     // Dialog requesting permission?
                     this.executeAsyncTask = false;
-
                 }
                 return;
             }
@@ -195,19 +186,21 @@ public class ForecastFragment extends Fragment {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+
+
     /**
      * Validates if permission has been given.
      * If not shouldShowRequestPermissionRationale is colled.
      * @param permissionCode String containing a Manifest.permission
      */
-    private void permissionRequest(String permissionCode){
+    public void permissionRequest(String permissionCode){
         if(permissionCode.isEmpty())
             return;
         if( sdkVersionName < Build.VERSION_CODES.M ) {
             this.executeAsyncTask=true;
             return;
         }
-
+    ;
         if( ContextCompat.checkSelfPermission(getActivity(),permissionCode)
                 != PackageManager.PERMISSION_GRANTED ){
 
@@ -223,7 +216,7 @@ public class ForecastFragment extends Fragment {
                         new String[]{permissionCode},
                         MY_PERMISSIONS_REQUEST_INTERNET);
 
-                // MY_PERMISSIONS_REQUEST_INTERNET is an
+                // MY_PERMISSIONS_REQUEST_LOCATION is an
                 // app-defined int constant. The callback method gets the
                 // result of the request.
             }
@@ -233,6 +226,20 @@ public class ForecastFragment extends Fragment {
         }
     }
 
+
+    public void updateWeather(){
+        permissionRequest(Manifest.permission.INTERNET);
+
+        if (this.executeAsyncTask) {
+            FetchWeatherTask weatherTask = new FetchWeatherTask();
+            SharedPreferences pref_location = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String location = pref_location.getString(
+                    getString(R.string.preference_location_key),
+                    getString(R.string.preference_location_default));
+
+            weatherTask.execute(location);
+        }
+    }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
@@ -261,7 +268,8 @@ public class ForecastFragment extends Fragment {
 
             try {
 
-                // URL = "http://api.openweathermap.org/data/2.5/forecast/daily?id=2267057&mode=json&units=metric&cnt=7";
+                // URL_TESTE
+                // http://api.openweathermap.org/data/2.5/forecast/daily?id=2267057&mode=json&units=metric&cnt=7&appid=bd82977b86bf27fb59a04b61b657fb6f
                 String OPEN_WEATHER_MAP_API_KEY = "bd82977b86bf27fb59a04b61b657fb6f";
 
                 // Construct the URL for the OpenWeatherMap query
@@ -367,7 +375,14 @@ public class ForecastFragment extends Fragment {
         /**
          * Prepare the weather high/lows for presentation.
          */
-        private String formatHighLows(double high, double low) {
+        private String formatHighLows(double high, double low, String unitType) {
+            if (unitType.equals(getString(R.string.preference_temperature_units_imperial))) {
+                high = (high * 1.8) + 32;
+                low = (low * 1.8) + 32;
+            } else if (!unitType.equals(getString(R.string.preference_temperature_units_metric))) {
+                Log.d(LOG_TAG, "Unit type not found: " + unitType);
+            }
+
             // For presentation, assume the user doesn't care about tenths of a degree.
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
@@ -415,6 +430,18 @@ public class ForecastFragment extends Fragment {
             dayTime = new Time();
 
             String[] resultStrs = new String[numDays];
+
+            // Data is fetched in Celsius by default.
+            // If user prefers to see in Fahrenheit, convert the values here.
+            // We do this rather than fetching in Fahrenheit so that the user can
+            // change this option without us having to re-fetch the data once
+            // we start storing the values in a database.
+            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String unitType = sharedPrefs.getString(
+                    getString(R.string.preference_temperature_units_key),
+                    getString(R.string.preference_temperature_units_default));
+
+
             for(int i = 0; i < weatherArray.length(); i++) {
                 // For now, using the format "Day, description, hi/low"
                 String day;
@@ -442,7 +469,7 @@ public class ForecastFragment extends Fragment {
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
-                highAndLow = formatHighLows(high, low);
+                highAndLow = formatHighLows(high, low, unitType);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
