@@ -1,11 +1,9 @@
 package com.example.android.weatherapp;
 
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -17,9 +15,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** Current activity simple name, MainActivity, added as Log Tag. */
     protected final String LOG_TAG_ACTIVITY = MainActivity.class.getSimpleName();
-    
-    /** User Android SDK Version */
-    protected int sdkVersionName;
+
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,13 +24,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Retrieves SDK version for future use
-        try {
-            sdkVersionName = Build.VERSION.SDK_INT;
-        } catch (Exception e) {
-            Log.e(LOG_TAG_ACTIVITY, e.getMessage(), e);
-        }
-        
+
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {
 //            @Override

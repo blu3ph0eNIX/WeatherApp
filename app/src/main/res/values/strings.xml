@@ -57,4 +57,17 @@
     <string name="preference_temperature_units_imperial" translatable="false">imperial</string>
 
 
+    <!-- Permissions SnackBar Explication -->
+    <string name="permission_access_initial">Need permissions for</string>
+    <string name="permission_access_denied">Permissions not given</string>
+
+    <string name="permission_access_separator">,</string>
+    <string name="permission_access_and">and</string>
+    <string name="permission_access_location">Location</string>
+    <string name="permission_access_audio">Audio</string>
+    <string name="permission_access_camera">Camera</string>
+    <string name="permission_access_storage">Storage</string>
+
+
+
 </resources>

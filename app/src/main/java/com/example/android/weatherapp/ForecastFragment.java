@@ -1,6 +1,7 @@
 package com.example.android.weatherapp;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -9,9 +10,12 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -37,6 +41,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -45,38 +50,38 @@ public class ForecastFragment extends Fragment {
     /** Current activity simple name, ForecastFragment, added as Log Tag. */
     protected final String LOG_TAG_FRAGMENT = ForecastFragment.class.getSimpleName();
 
-    /** User Android SDK Version */
-    protected int sdkVersionName;
-    /** Used @onRequestPermissionsResult to validate if INTERNET Permission has been given.  */
-    protected final int MY_PERMISSIONS_REQUEST_INTERNET = 1;
-    /** Defines if AsyncTask can be run. If true run. Else don't. */
-    protected Boolean executeAsyncTask;
+    /** ResultCode for Permissions Request */
+    private final static int PERMISSION_REQUEST_READ_PHONE_STATE                = 100;
+    private final static int PERMISSION_REQUEST_ACCESS_COARSE_LOCATION          = 101;
+    private final static int PERMISSION_REQUEST_ACCESS_FINE_LOCATION            = 102;
+    private final static int PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE          = 103;
+    private final static int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE           = 104;
+    private final static int PERMISSION_REQUEST_CALL_PHONE                      = 105;
+    private final static int PERMISSION_REQUEST_CAMERA                          = 106;
+    private final static int PERMISSION_REQUEST_READ_CONTACTS                   = 107;
+    private final static int PERMISSION_REQUEST_RECORD_AUDIO                    = 108;
+    private final static int PERMISSION_REQUEST_MULTIPLE_PERMISSIONS_RESULT     = 109;
+    private final static int PERMISSION_REQUEST_ALL_PERMISSIONS_RESULT          = 110;
 
-    /** Used @onRequestPermissionsResult to validate if LOCATION Permission has been given.  */
-    protected final int MY_PERMISSIONS_REQUEST_LOCATION = 1;
-    /** Defines if AsyncTask can be run. If true run. Else don't. */
-    protected Boolean executeLocationIntent;
+    private static final int INTENT_REQUEST_APP_SETTINGS = 168;
+
+    private SharedPreferences mSharedPreferences;
 
     private ArrayAdapter<String> mForecastAdapter;
     private Toast mCurrentToast;
 
+    private String[] requiredPermissions = new String[]{""};
 
     public ForecastFragment() {
-        this.executeAsyncTask = false;
-        this.executeLocationIntent = false;
         this.mCurrentToast = null;
 
-        // Retrieves SDK version for future use
-        try {
-            sdkVersionName = Build.VERSION.SDK_INT;
-        } catch (Exception e) {
-            Log.e(LOG_TAG_FRAGMENT, e.getMessage(), e);
-        }
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
         updateWeather();
     }
 
@@ -95,11 +100,11 @@ public class ForecastFragment extends Fragment {
         // The ArrayAdapter will take data from a source and
         // use it to populate the ListView it's attached to.
         mForecastAdapter =
-            new ArrayAdapter<>(
-                getActivity(),                          // The current context (this activity)
-                R.layout.list_view_item_forecast,       // The name of the layout ID.
-                R.id.list_view_item_forecast_textView,  // The ID of the TextView to populate.
-                new ArrayList<String>());
+                new ArrayAdapter<>(
+                        getActivity(),                          // The current context (this activity)
+                        R.layout.list_view_item_forecast,       // The name of the layout ID.
+                        R.id.list_view_item_forecast_textView,  // The ID of the TextView to populate.
+                        new ArrayList<String>());
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
@@ -144,101 +149,33 @@ public class ForecastFragment extends Fragment {
             return true;
 
         }else if(id == R.id.action_location){
-            // TODO
-            // Refine Permission Request
-            permissionRequest(Manifest.permission.ACCESS_FINE_LOCATION);
-            if (true) {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse("geo:38.716671,-9.13333?z=11")); // Lisbon - geo:lat,lon?zoom
+            if(marshmallowsOrHigher()) {
+                // Permission and Description
+                String[] perm = {Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                String[] msg = { getString(R.string.permission_access_location),
+                        getString(R.string.permission_access_storage)};
 
-                if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
-                    startActivity(intent);
+                requiredPermissions = perm;
+
+                requestTest(perm, msg);
+
+                if (hasPermissions(requiredPermissions)) {
+                    mapsExplicitIntent();
                 }
             }
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_INTERNET: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Request the permissions you need
-                    // permission was granted, yay!
-                    this.executeAsyncTask = true;
-                } else {
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-
-                    // TODO:
-                    // Dialog requesting permission?
-                    this.executeAsyncTask = false;
-                }
-                return;
-            }
-            // other 'case' lines to check for other
-            // permissions this app might request
-        }
-
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-
-
-    /**
-     * Validates if permission has been given.
-     * If not shouldShowRequestPermissionRationale is colled.
-     * @param permissionCode String containing a Manifest.permission
-     */
-    public void permissionRequest(String permissionCode){
-        if(permissionCode.isEmpty())
-            return;
-        if( sdkVersionName < Build.VERSION_CODES.M ) {
-            this.executeAsyncTask=true;
-            return;
-        }
-    ;
-        if( ContextCompat.checkSelfPermission(getActivity(),permissionCode)
-                != PackageManager.PERMISSION_GRANTED ){
-
-            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    permissionCode)) {
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-            } else {
-
-                // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(getActivity(),
-                        new String[]{permissionCode},
-                        MY_PERMISSIONS_REQUEST_INTERNET);
-
-                // MY_PERMISSIONS_REQUEST_LOCATION is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
-
-        }else{
-            this.executeAsyncTask = true;
-        }
-    }
-
-
     public void updateWeather(){
-        permissionRequest(Manifest.permission.INTERNET);
-
-        if (this.executeAsyncTask) {
             FetchWeatherTask weatherTask = new FetchWeatherTask();
-            SharedPreferences pref_location = PreferenceManager.getDefaultSharedPreferences(getActivity());
-            String location = pref_location.getString(
+            String location = mSharedPreferences.getString(
                     getString(R.string.preference_location_key),
                     getString(R.string.preference_location_default));
 
             weatherTask.execute(location);
-        }
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
@@ -484,4 +421,197 @@ public class ForecastFragment extends Fragment {
 
     }
 
+    /**
+     * Just a check to see if we have marshmallows (version 23)
+     * @return
+     */
+    private boolean marshmallowsOrHigher() {
+        return(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
+    }
+
+    private void requestTest(String[] permissions, String[] explicationMessages){
+        if( permissions.length < 1 || explicationMessages.length < 1
+                || permissions.length != explicationMessages.length )
+            return;
+
+        List<String> permissionsNeeded      = new ArrayList<>();
+        final List<String> permissionsList  = new ArrayList<>();
+
+        for (int i = 0; i < permissions.length; i++){
+            if (ActivityCompat.checkSelfPermission(getActivity(), permissions[i]) != PackageManager.PERMISSION_GRANTED) {
+                permissionsList.add(permissions[i]);
+                // Check for Rationale Option
+                if (shouldShowRequestPermissionRationale(permissions[i])){
+                    permissionsNeeded.add(explicationMessages[i]);
+                }
+            }
+
+        }
+
+        if( permissionsList.size() > 0 ) {
+            // Need Rationale
+            String message = getString(R.string.permission_access_initial) + " ";
+            if (explicationMessages.length < 2)
+                message += explicationMessages[0];
+            else {
+                for (int i = 0; i < explicationMessages.length - 1; i++)
+                    message += explicationMessages[i] + getString(R.string.permission_access_separator) + " ";
+                message += getString(R.string.permission_access_and) + " " + explicationMessages[permissionsList.size() - 1];
+            }
+
+            // TODO:
+            // When only one permission is remaining its necessary and it as been set to
+            // "Dont ask again" noting happens
+
+            // Means that some Necessary Permissions where permanently denied
+            if (permissionsNeeded.size() > 0 && permissionsNeeded.size() != permissionsList.size()) {
+                    new AlertDialog.Builder(getActivity())
+                            .setMessage(message)
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Intent myAppSettings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                    myAppSettings.setData(Uri.parse("package:" + getActivity().getPackageName()));
+                                    myAppSettings.addCategory(Intent.CATEGORY_DEFAULT);
+                                    startActivityForResult(myAppSettings, INTENT_REQUEST_APP_SETTINGS);
+                                }
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .create()
+                            .show();
+
+            }else if (permissionsNeeded.size() > 0 && permissionsNeeded.size() == permissionsList.size()) {
+                Snackbar snackbar = Snackbar
+                        .make(getView().getRootView().findViewById(R.id.fragment),
+                                message,
+                                Snackbar.LENGTH_LONG)
+                        .setCallback(new Snackbar.Callback() {
+                            @Override
+                            public void onDismissed(Snackbar snackbar, int event) {
+                                ActivityCompat.requestPermissions(getActivity(),
+                                        permissionsList.toArray(new String[permissionsList.size()]),
+                                        INTENT_REQUEST_APP_SETTINGS);
+                            }
+                        });
+                snackbar.show();
+            }else{
+                ActivityCompat.requestPermissions(getActivity(),
+                        permissionsList.toArray(new String[permissionsList.size()]),
+                        PERMISSION_REQUEST_MULTIPLE_PERMISSIONS_RESULT);
+            }
+//            }else if( permissionsNeeded.size() > 0 && permissionsList.size() == permissionsNeeded.size() ) {
+////                Snackbar snackbar = Snackbar
+////                        .make(getView().getRootView().findViewById(R.id.fragment),
+////                                message,
+////                                Snackbar.LENGTH_LONG);
+//////                        .setAction("UNDO", new View.OnClickListener() {
+//////                            @Override
+//////                            public void onClick(View view) {
+//////                                Snackbar snackbar1 = Snackbar
+//////                                        .make(getView().getRootView().findViewById(R.id.fragment),
+//////                                                "Message is restored!",
+//////                                                Snackbar.LENGTH_SHORT);
+//////                                snackbar1.show();
+//////                            }})
+////                snackbar.show();
+//            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+
+        switch (requestCode) {
+            case PERMISSION_REQUEST_ACCESS_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Request the permissions you need permission was granted, yay!
+
+                    if (hasPermissions(requiredPermissions)) {
+                        mapsExplicitIntent();
+                    }else{
+                        if (mCurrentToast != null) mCurrentToast.cancel();
+                        mCurrentToast = Toast.makeText(
+                                getActivity(),
+                                getString(R.string.permission_access_denied),
+                                Toast.LENGTH_LONG);
+                        mCurrentToast.show();
+                    }
+
+                } else {
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    // Need Rationale
+                    String message =    getString(R.string.permission_access_initial) + " " +
+                                        getString(R.string.permission_access_location);
+
+                    Snackbar snackbar = Snackbar
+                            .make(getView().getRootView().findViewById(R.id.fragment),
+                                    message ,
+                                    Snackbar.LENGTH_LONG);
+                    snackbar.show();
+
+                }
+                return;
+            }case PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE: {
+                if (hasPermissions(requiredPermissions)) {
+                    mapsExplicitIntent();
+                }else{
+                    if (mCurrentToast != null) mCurrentToast.cancel();
+                    mCurrentToast = Toast.makeText(
+                            getActivity(),
+                            getString(R.string.permission_access_denied),
+                            Toast.LENGTH_LONG);
+                    mCurrentToast.show();
+                }
+                return;
+            }case PERMISSION_REQUEST_MULTIPLE_PERMISSIONS_RESULT:{
+                if (hasPermissions(requiredPermissions)) {
+                    mapsExplicitIntent();
+                }else{
+                    if (mCurrentToast != null) mCurrentToast.cancel();
+                    mCurrentToast = Toast.makeText(
+                            getActivity(),
+                            getString(R.string.permission_access_denied),
+                            Toast.LENGTH_LONG);
+                    mCurrentToast.show();
+                }
+                return;
+            }
+                default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == INTENT_REQUEST_APP_SETTINGS) {
+            if (hasPermissions(requiredPermissions)) {
+                mapsExplicitIntent();
+            }else{
+                if (mCurrentToast != null) mCurrentToast.cancel();
+                mCurrentToast = Toast.makeText(
+                            getActivity(),
+                            getString(R.string.permission_access_denied),
+                            Toast.LENGTH_LONG);
+                mCurrentToast.show();
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public boolean hasPermissions(@NonNull String... permissions) {
+        for (String permission : permissions)
+            if (PackageManager.PERMISSION_GRANTED != ActivityCompat.checkSelfPermission(getActivity(),permission))
+                return false;
+        return true;
+    }
+
+    private void mapsExplicitIntent(){
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse("geo:38.716671,-9.13333?z=11")); // Lisbon - geo:lat,lon?zoom
+
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null)
+            startActivity(intent);
+    }
 }
